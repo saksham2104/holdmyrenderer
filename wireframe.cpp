@@ -1,3 +1,5 @@
+// g++-16 -std=c++23 wireframe.cpp tgaimage.cpp -o main && ./main && open wireframe.tga && time ./main
+
 #include<bits/stdc++.h>
 #include <fstream>
 #include <string>
@@ -121,4 +123,5 @@ int main(int argc, char** argv) {
 
     framebuffer.write_tga_file("wireframe.tga");   
     return 0;
+
 }
