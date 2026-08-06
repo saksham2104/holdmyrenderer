@@ -1,4 +1,6 @@
-// g++-16 -std=c++23 main.cpp tgaimage.cpp -o main && ./main && open main.tga && time ./main
+//g++-16 -std=c++23 main.cpp tgaimage.cpp -o main && ./main && open main.tga 
+
+//  time ./main -> to compare time
 
 #include<bits/stdc++.h>
 #include <fstream>
