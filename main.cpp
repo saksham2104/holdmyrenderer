@@ -9,7 +9,11 @@
 
 using namespace std;
 
-constexpr TGAColor red = { 0,0, 255, 255};
+constexpr TGAColor white   = {255, 255, 255, 255}; // attention, BGRA order
+constexpr TGAColor green   = {  0, 255,   0, 255};
+constexpr TGAColor red     = {  0,   0, 255, 255};
+constexpr TGAColor blue    = {255, 128,  64, 255};
+constexpr TGAColor yellow  = {  0, 200, 255, 255};
 
 constexpr int width  = 800;
 constexpr int height = 800;
@@ -17,6 +21,7 @@ constexpr int height = 800;
 
 struct Point{
     int x,y;
+    int z = 0;
 };
 
 struct Vertice {
@@ -84,23 +89,21 @@ void line(int ax, int ay, int bx, int by, TGAImage &framebuffer, TGAColor color)
         std::swap(ax, bx);
         std::swap(ay, by);
     }
-    int y = ay;
-    int ierror = 0;
+    float y = ay;
     for (int x=ax; x<=bx; x++) {
         if (steep) // if transposed, de−transpose
             framebuffer.set(y, x, color);
         else
             framebuffer.set(x, y, color);
-        ierror += 2 * std::abs(by-ay);
-        y += (by > ay ? 1 : -1) * (ierror > bx - ax);
-        ierror -= 2 * (bx-ax)   * (ierror > bx - ax);
+        y += (by-ay) / static_cast<float>(bx-ax);
     }
 }
 
 bool check(Point p,Point a,Point b,Point c){
-    // create three lines 
     /*
      create line AB and then check sign of point C and point P && BC && CA
+
+     this is a cheap trick , will implement barycentric coordinates later
     */
     float m = (b.y - a.y)/static_cast<float>(b.x-a.x);
     float d = a.y - (m * a.x); 
@@ -112,11 +115,16 @@ bool check(Point p,Point a,Point b,Point c){
 }
 
 
-void triangle(Point &a,Point &b,Point &c,TGAImage &framebuffer,TGAColor color){
+double area_triangle(Point &a,Point &b,Point &c){
+    return (0.5) * ((b.y - a.y)*(b.x + a.x) + (c.y-b.y) * (c.x + b.x) + (a.y - c.y) * (c.x + a.x));
+}
 
-    line(a.x,a.y,b.x,b.y,framebuffer,color);
-    line(b.x,b.y,c.x,c.y,framebuffer,color);
-    line(c.x,c.y,a.x,a.y,framebuffer,color);
+
+void triangle(Point &a,Point &b,Point &c,TGAImage&zbuffer,TGAImage &framebuffer,TGAColor color){
+
+    // line(a.x,a.y,b.x,b.y,framebuffer,color);
+    // line(b.x,b.y,c.x,c.y,framebuffer,color);
+    // line(c.x,c.y,a.x,a.y,framebuffer,color);
 
     // fill triangle
 
@@ -126,24 +134,47 @@ void triangle(Point &a,Point &b,Point &c,TGAImage &framebuffer,TGAColor color){
     int mn_y = min({a.y,b.y,c.y});
     int mx_y = max({a.y,b.y,c.y});
 
+    double area = area_triangle(a,b,c);
+
     for(int x = mn_x;x<=mx_x;x++){
         for(int y =mn_y;y<=mx_y;y++){
             Point p(x,y);
-            if(check(p,a,b,c) && check(p,b,c,a) && check(p,a,c,b)){
-                framebuffer.set(p.x,p.y,color);
-            }
+            double alpha =  area_triangle(p,b,c) / area;
+            double beta  =  area_triangle(p,c,a) / area;
+            double gamma =  area_triangle(p,a,b) / area;
+
+            if(alpha < 0 || beta < 0 || gamma < 0) continue;
+
+            unsigned char z = static_cast<unsigned char>(alpha * a.z + beta * b.z + gamma * c.z);
+            p.z = z;
+
+            if(z < zbuffer.get(x,y)[0]) continue;
+
+            framebuffer.set(x,y,color);
+            
+            zbuffer.set(x,y,{z});
+  
         }
     }
 }
 
 
+Point convert(Vertice v){
+    int x = (v.x + 1)* (width) / 2;
+    int y = (v.y + 1) * (height)/2;
+    int z = (v.z + 1) * (255) / 2;
+
+    return Point(x,y,z);
+}
+
 
 int main(int argc, char** argv) {
 
-    constexpr int width  = 800;
-    constexpr int height = 800;
+    //std::srand(std::time(nullptr));
 
     TGAImage framebuffer(width, height, TGAImage::RGB);
+
+    TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
 
     read_obj_file();
 
@@ -156,26 +187,20 @@ int main(int argc, char** argv) {
         Vertice v1 = vertices[f.b];
         Vertice v2 = vertices[f.c];
 
-        int x0 = (v0.x + 1.) * width  / 2.;
-        int y0 = (v0.y + 1.) * height / 2.;
-
-        int x1 = (v1.x + 1.) * width  / 2.;
-        int y1 = (v1.y + 1.) * height / 2.;
-
-        int x2 = (v2.x + 1.) * width  / 2.;
-        int y2 = (v2.y + 1.) * height / 2.;
-
-        Point a(x0,y0),b(x1,y1),c(x2,y2);
+        Point a = convert(v0);
+        Point b = convert(v1);
+        Point c = convert(v2);
 
         TGAColor rnd;
 
         for (int c=0; c<3; c++) rnd[c] = std::rand()%255;
 
-        triangle(a,b,c,framebuffer,rnd);
+        triangle(a,b,c,zbuffer,framebuffer,rnd);
 
     }
 
-    framebuffer.write_tga_file("main.tga");   
+    framebuffer.write_tga_file("main.tga");  
+    zbuffer.write_tga_file("zbuffer.tga"); 
     return 0;
 
 }
