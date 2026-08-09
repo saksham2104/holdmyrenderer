@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 #include "tgaimage.h"
 
 
@@ -44,7 +45,7 @@ int main(int argc, char** argv) {
     for (int i=0; i<(1<<24); i++) {
         int ax = rand()%width, ay = rand()%height;
         int bx = rand()%width, by = rand()%height;
-        line(ax, ay, bx, by, framebuffer, { rand()%255, rand()%255, rand()%255, rand()%255 });
+        line(ax, ay, bx, by, framebuffer, { static_cast<std::uint8_t>(rand()%255), static_cast<std::uint8_t>(rand()%255), static_cast<std::uint8_t>(rand()%255), static_cast<std::uint8_t>(rand()%255) });
     }
 
     framebuffer.write_tga_file("framebuffer.tga");

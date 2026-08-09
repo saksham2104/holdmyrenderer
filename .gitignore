@@ -5,6 +5,5 @@
 *.exe
 *.out
 *.o
-*.txt
 .DS_Store
 main

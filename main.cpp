@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <tuple>
 
 #include "tgaimage.h"
 #include "geometry.h"
@@ -13,28 +14,14 @@
 constexpr int width = 800;
 constexpr int height = 800;
 
-Point convert(const Vertice& v) {
-
-    int x = (v.x + 1) * width / 2;
-    int y = (v.y + 1) * height / 2;
-    int z = (v.z + 1) * 255 / 2;
-
-    return Point{x, y, z};
+std::tuple<int, int, int> project(Vec3 v) {
+    return {(v.x + 1) * width / 2, (v.y + 1) * height / 2, (v.z + 1) * 255 / 2};
 }
 
 int main() {
 
-    TGAImage framebuffer(
-        width,
-        height,
-        TGAImage::RGB
-    );
-
-    TGAImage zbuffer(
-        width,
-        height,
-        TGAImage::GRAYSCALE
-    );
+    TGAImage framebuffer(width, height, TGAImage::RGB);
+    TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
 
     Model model("african_head.obj");
 
@@ -45,20 +32,21 @@ int main() {
 
     for (const Face& f : model.get_faces()) {
 
-        Vertice v0 = model.get_vertices()[f.a];
-        Vertice v1 = model.get_vertices()[f.b];
-        Vertice v2 = model.get_vertices()[f.c];
+        Vec3 v0 = model.get_vertices()[f.a];
+        Vec3 v1 = model.get_vertices()[f.b];
+        Vec3 v2 = model.get_vertices()[f.c];
 
-        Point a = convert(v0);
-        Point b = convert(v1);
-        Point c = convert(v2);
+        auto [ax, ay, az] = project(v0);
+        auto [bx, by, bz] = project(v1);
+        auto [cx, cy, cz] = project(v2);
 
         TGAColor color;
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++){
             color[i] = std::rand() % 255;
+        }
 
-        triangle(a, b, c,zbuffer,framebuffer,color);
+        triangle(ax, ay, az, bx, by, bz, cx, cy, cz, zbuffer, framebuffer, color);
     }
 
     framebuffer.write_tga_file("main.tga");

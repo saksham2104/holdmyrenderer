@@ -22,7 +22,7 @@ Model::Model(const std::string& filename) {
         if (line.substr(0, 2) == "v ") {
 
             char type;
-            Vertice v;
+            Vec3 v;
 
             iss >> type >> v.x >> v.y >> v.z;
 
@@ -48,7 +48,7 @@ Model::Model(const std::string& filename) {
     }
 }
 
-const std::vector<Vertice>& Model::get_vertices() const {
+const std::vector<Vec3>& Model::get_vertices() const {
     return vertices;
 }
 

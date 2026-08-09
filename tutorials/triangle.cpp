@@ -8,7 +8,8 @@ TRIANLGE RASTERISATION
 //// g++-16 -std=c++23 triangle.cpp tgaimage.cpp -o main && ./main && open triangle.tga && time ./main
 
 
-#include<bits/stdc++.h>
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <string>
 #include "tgaimage.h"
@@ -25,10 +26,6 @@ constexpr TGAColor red     = {  0,   0, 255, 255};
 constexpr TGAColor blue    = {255, 128,  64, 255};
 constexpr TGAColor yellow  = {  0, 200, 255, 255};
 
-
-struct Point{
-    int x,y;
-};
 
 void line(int ax, int ay, int bx, int by, TGAImage &framebuffer, TGAColor color) {
     bool steep = std::abs(ax-bx) < std::abs(ay-by);
@@ -50,40 +47,39 @@ void line(int ax, int ay, int bx, int by, TGAImage &framebuffer, TGAColor color)
     }
 }
 
-bool check(Point p,Point a,Point b,Point c){
+bool check(int px, int py, int ax, int ay, int bx, int by, int cx, int cy) {
     // create three lines 
     /*
      create line AB and then check sign of point C and point P && BC && CA
     */
-    float m = (b.y - a.y)/static_cast<float>(b.x-a.x);
-    float d = a.y - (m * a.x); 
+    float m = (by - ay)/static_cast<float>(bx-ax);
+    float d = ay - (m * ax);
 
     // line is y - mx - d
 
-    return ((p.y - m * p.x -d) * (c.y-m*c.x -d) > 0);
+    return ((py - m * px -d) * (cy-m*cx -d) > 0);
     
 }
 
 
-void triangle(Point &a,Point &b,Point &c,TGAImage &framebuffer,TGAColor color){
+void triangle(int ax, int ay, int bx, int by, int cx, int cy, TGAImage &framebuffer, TGAColor color) {
 
-    line(a.x,a.y,b.x,b.y,framebuffer,color);
-    line(b.x,b.y,c.x,c.y,framebuffer,color);
-    line(c.x,c.y,a.x,a.y,framebuffer,color);
+    line(ax, ay, bx, by, framebuffer, color);
+    line(bx, by, cx, cy, framebuffer, color);
+    line(cx, cy, ax, ay, framebuffer, color);
 
     // fill triangle
 
-    int mn_x = min({a.x,b.x,c.x});
-    int mx_x = max({a.x,b.x,c.x});
+    int mn_x = min({ax, bx, cx});
+    int mx_x = max({ax, bx, cx});
 
-    int mn_y = min({a.y,b.y,c.y});
-    int mx_y = max({a.y,b.y,c.y});
+    int mn_y = min({ay, by, cy});
+    int mx_y = max({ay, by, cy});
 
     for(int x = mn_x;x<=mx_x;x++){
         for(int y =mn_y;y<=mx_y;y++){
-            Point p(x,y);
-            if(check(p,a,b,c) && check(p,b,c,a) && check(p,a,c,b)){
-                framebuffer.set(p.x,p.y,color);
+            if(check(x, y, ax, ay, bx, by, cx, cy) && check(x, y, bx, by, cx, cy, ax, ay) && check(x, y, ax, ay, cx, cy, bx, by)){
+                framebuffer.set(x, y, color);
             }
         }
     }
@@ -104,14 +100,9 @@ int main(int argc, char** argv) {
     const int cx = 50,cy =  44;
     const int dx = 60 , dy = 30;
 
-    Point a(ax,ay);
-    Point b(bx,by);
-    Point c(cx,cy);
-    Point d(dx,dy);
+    triangle(bx, by, ax, ay, cx, cy, framebuffer, red);
 
-    triangle(b,a,c,framebuffer,red);
-
-    triangle(d,a,b,framebuffer,white);
+    triangle(dx, dy, ax, ay, bx, by, framebuffer, white);
 
     framebuffer.write_tga_file("triangle.tga");
     return 0;

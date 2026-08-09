@@ -1,8 +1,12 @@
 // g++-16 -std=c++23 wireframe.cpp tgaimage.cpp -o main && ./main && open wireframe.tga && time ./main
 
-#include<bits/stdc++.h>
+#include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
+#include <vector>
 #include "tgaimage.h"
 
 using namespace std;
@@ -10,7 +14,7 @@ using namespace std;
 constexpr TGAColor red = { 0,0, 255, 255};
 
 
-struct Vertice {
+struct Vec3 {
     float x, y, z; // coordinates bw 0 to 1
 };
 
@@ -18,7 +22,7 @@ struct Face {
     int a, b, c; // indice of Vertices (1 - indexed)
 };
 
-std::vector<Vertice> vertices;
+std::vector<Vec3> vertices;
 std::vector<Face> faces;
 
 void read_obj_file() {
@@ -39,7 +43,7 @@ void read_obj_file() {
         if (line.substr(0,2) == "v ") {
 
             char type;
-            Vertice v;
+            Vec3 v;
 
             iss >> type >> v.x >> v.y >> v.z;
 
@@ -103,9 +107,9 @@ int main(int argc, char** argv) {
 
     for (const Face &f : faces) {
 
-        Vertice v0 = vertices[f.a];
-        Vertice v1 = vertices[f.b];
-        Vertice v2 = vertices[f.c];
+        Vec3 v0 = vertices[f.a];
+        Vec3 v1 = vertices[f.b];
+        Vec3 v2 = vertices[f.c];
 
         int x0 = (v0.x + 1.) * width  / 2.;
         int y0 = (v0.y + 1.) * height / 2.;
